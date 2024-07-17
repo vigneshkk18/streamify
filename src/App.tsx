@@ -1,7 +1,7 @@
 import { Route, Switch } from "wouter";
 
 import Room from "@/pages/room";
-import home from "@/pages/home";
+import Home from "@/pages/home";
 
 import Header from "@/components/header/header";
 import Background from "@/components/ui/background";
@@ -16,10 +16,10 @@ function App() {
         {/* <Background /> */}
         <Header />
         <Switch>
-          <Route path="/:roomId" component={Room} />
-          <Route component={home} />
+          <Route path="/:roomId/:peerType" component={Room} />
+          <Route component={Home} />
         </Switch>
-        <RoomControls />
+        {/* <RoomControls /> */}
       </TooltipProvider>
     </ThemeProvider>
   );

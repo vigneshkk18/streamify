@@ -1,21 +1,35 @@
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-
-import ChatButton from "@/components/room/chat";
-import RoomControls from "@/components/room/room-controls";
+import { Redirect, useParams } from "wouter";
+import { useManager } from "@/hooks/useManager";
+import WaitingForPeer from "@/components/room/waiting-for-peer";
 import WaitingForStream from "@/components/room/waiting-for-stream";
-import WaitingForDevice from "@/components/room/waiting-for-device";
-import OfflineConnectSteps from "@/components/room/offline-connect-steps";
+import { useRef } from "react";
+import { useStreamManager } from "@/hooks/useStreamManager";
 
 export default function Room() {
+  const { roomId, peerType } = useParams<{
+    roomId: string;
+    peerType: "createe" | "joinee";
+  }>();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { isReady: isStreamReady, onFileSelected } = useStreamManager(
+    roomId,
+    peerType,
+    videoRef.current
+  );
+  const { isReady } = useManager(roomId, peerType);
+
+  if (peerType !== "createe" && peerType !== "joinee") {
+    return <Redirect to="/" />;
+  }
+
   return (
-    <>
-      <main className="w-[calc(100vw-32px)] flex-grow mx-auto grid place-items-center">
-        {/* <WaitingForDevice /> */}
-        {/* <OfflineConnectSteps /> */}
-        {/* <WaitingForStream /> */}
-        {/* <video src="/video.mp4" className="w-full max-w-[100vh]" /> */}
-      </main>
-    </>
+    <main className="w-[calc(100vw-32px)] flex-grow mx-auto grid place-items-center">
+      {!isReady && <WaitingForPeer />}
+      {/* {isReady && <WaitingForStream />} */}
+      {!isStreamReady && isReady && (
+        <WaitingForStream onFileDrop={onFileSelected} />
+      )}
+      <video ref={videoRef} className="w-full max-w-[100vh]" />
+    </main>
   );
 }
