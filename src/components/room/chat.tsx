@@ -17,12 +17,12 @@ import { Button } from "@/components/ui/button";
 
 import { closeMenu } from "@/hooks/useMenu";
 import { useManager } from "@/hooks/useManager";
-import { Message, setChatState, useChat } from "@/hooks/useChat";
+import { Message as IMessage, setChatState, useChat } from "@/hooks/useChat";
 
 import { Send } from "@/assets/send";
 import { Chat as ChatIcon } from "@/assets/chat";
 
-function Message({ self, message }: Message) {
+function Message({ self, message }: IMessage) {
   const style = self ? "bg-primary text-white ml-auto" : "bg-muted/20";
   return (
     <li className={`max-w-[75%] ${style} border px-2 py-1 rounded-md w-max`}>
@@ -39,7 +39,7 @@ function Chat() {
   function sendMessage(event: MouseEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!dataChannel || !input.current) return;
-    const newMessage: Message & { type: "message" } = {
+    const newMessage: IMessage & { type: "message" } = {
       type: "message",
       message: input.current.value,
       self: true,
