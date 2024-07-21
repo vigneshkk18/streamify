@@ -82,7 +82,7 @@ export default function Menu() {
               disabled={disabled}
               className="w-full"
             >
-              <Square className="mr-2 text-black dark:text-white" />
+              <Square className="mr-2 text-white" />
               Stop Streaming
             </Button>
           </>
