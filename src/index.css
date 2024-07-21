@@ -74,3 +74,27 @@ a[href="https://neat.firecms.co"] {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .file-drop .file-drop-target {
+    @apply flex flex-col items-center justify-center gap-6 px-10 py-10 border-black rounded-md cursor-pointer border border-dashed;
+  }
+
+  .file-drop>.file-drop-target.file-drop-dragging-over-target {
+    @apply border-primary bg-primary/10 text-primary;
+  }
+
+  .file-drop>.file-drop-target.file-drop-dragging-over-target svg {
+    @apply text-primary;
+  }
+}
+
+.player {
+  width: 100%;
+
+  @media (min-width: 768px) {
+    max-width: 70%;
+    max-height: 80%;
+    width: 100%;
+  }
+}
