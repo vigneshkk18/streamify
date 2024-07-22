@@ -24,7 +24,8 @@ function getUID() {
   return generator.rnd();
 }
 
-function onPeerLeft() {
+function onPeerLeft(uuid: string) {
+  if (uuid === useManager.getState().uid) return;
   const dataChannel = useManager.getState().dataChannel;
   if (dataChannel) {
     dataChannel.close();
@@ -33,11 +34,6 @@ function onPeerLeft() {
     isReady: false,
     isConnected: false,
     dataChannel: null,
-  });
-  window.history.pushState(null, "", "/");
-  toast({
-    title: "Device has left the room",
-    variant: "destructive",
   });
 }
 
@@ -53,27 +49,32 @@ async function onNegotiationNeeded(
 export default function usePeerConnection() {
   const params = useParams<{ roomId: string }>();
   const searchParams = useSearchParams<{ peerType: "createe" | "joinee" }>();
-  const { connection, uid } = useManager();
+  const { connection, uid, isReady } = useManager();
   const [, navigate] = useLocation();
 
-  const exitRoom = useCallback(() => {
-    const connection = useManager.getState().connection;
-    if (!connection) {
+  const exitRoom = useCallback(
+    (uuid: string) => {
+      if (uuid === useManager.getState().uid) return;
+      const connection = useManager.getState().connection;
+      if (!connection) {
+        navigate("/");
+        return;
+      }
+      connection.close();
+      useManager.setState({
+        connection: null,
+        isReady: false,
+        isConnected: false,
+        dataChannel: null,
+      });
       navigate("/");
-      return;
-    }
-    connection.close();
-    useManager.setState({
-      connection: null,
-      isReady: false,
-      isConnected: false,
-    });
-    navigate("/");
-    toast({
-      title: "Device has left the room",
-      variant: "destructive",
-    });
-  }, [navigate]);
+      toast({
+        title: "Device has left the room",
+        variant: "destructive",
+      });
+    },
+    [navigate]
+  );
 
   const processOffer = useCallback(
     async (offer: RTCSessionDescription, uuid: string) => {
@@ -163,7 +164,14 @@ export default function usePeerConnection() {
     useManager.setState({ connection, isReady: true, uid: uuid });
 
     function beforeUnload() {
-      socket.emit(isCreatee ? "closeRoom" : "leaveRoom", { roomId });
+      useManager.getState().connection?.close();
+      useManager.setState({
+        isReady: false,
+        isConnected: false,
+        dataChannel: null,
+        connection: null,
+      });
+      socket.emit(isCreatee ? "closeRoom" : "leaveRoom", { roomId, uuid });
       socket.disconnect();
     }
 
@@ -179,7 +187,7 @@ export default function usePeerConnection() {
       socket.on("offIce", processIce);
       connection.removeEventListener("icecandidate", onIceCreated);
       window.removeEventListener("beforeunload", beforeUnload);
-      socket.disconnect();
+      beforeUnload();
     };
   }, [
     exitRoom,
@@ -192,13 +200,44 @@ export default function usePeerConnection() {
   ]);
 
   useEffect(() => {
-    if (!connection || !params.roomId || !uid) return;
+    const peerType = searchParams?.peerType;
+    const isJoinee = isJoineeRule(peerType);
+    const isCreatee = isCreateeRule(peerType);
+    if (
+      !connection ||
+      !params.roomId ||
+      !uid ||
+      !isReady ||
+      (!isJoinee && !isCreatee)
+    )
+      return;
+
+    function oniceconnectionstatechange() {
+      const iceConnectionState = connection?.iceConnectionState;
+      if (
+        !isCreatee ||
+        !iceConnectionState ||
+        !["closed", "disconnected", "failed"].includes(
+          connection?.iceConnectionState
+        )
+      )
+        return;
+      negotiationneeded();
+    }
 
     const negotiationneeded = () =>
       onNegotiationNeeded(connection, params.roomId, uid);
     connection.addEventListener("negotiationneeded", negotiationneeded);
+    connection.addEventListener(
+      "iceconnectionstatechange",
+      oniceconnectionstatechange
+    );
     return () => {
       connection.removeEventListener("negotiationneeded", negotiationneeded);
+      connection.removeEventListener(
+        "iceconnectionstatechange",
+        oniceconnectionstatechange
+      );
     };
-  }, [connection, params.roomId, uid]);
+  }, [connection, params.roomId, uid, isReady, searchParams]);
 }
