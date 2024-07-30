@@ -35,7 +35,7 @@ export default function Home() {
           </h2>
           <p>
             Stream your favorite video and audio content effortlessly between
-            devices, even offline. Experience ultimate convenience with our
+            devices. Experience ultimate convenience with our
             cutting-edge streaming app
           </p>
           <div className="flex w-full max-w-sm items-center space-x-2">
